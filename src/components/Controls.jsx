@@ -7,7 +7,7 @@ const Controls = () => {
 
   const handleAddToCart = async () => {
     const variantId = getVariantId(type, size);
-    
+
     if (!variantId) {
       alert("Error: Variant not found for this configuration.");
       return;
@@ -27,7 +27,7 @@ const Controls = () => {
         "_config_id": `pergola_${Date.now()}` // Internal reference
       }
     };
-    
+
     try {
       const properties = {
         "Base Price": `£${VARIANT_MAPPINGS[type][size].price}`,
@@ -42,11 +42,16 @@ const Controls = () => {
       };
 
       // If running on Vercel/External, we must redirect to the Shopify store
+      console.log("Current Hostname:", window.location.hostname);
+      console.log("Shopify Domain:", SHOPIFY_DOMAIN);
+
       if (window.location.hostname !== SHOPIFY_DOMAIN) {
+        console.log("Redirecting to Shopify Cart...");
         redirectToCart(variantId, 1, properties);
         return;
       }
 
+      console.log("Adding to cart via AJAX...");
       const cartData = await addToCart(variantId, 1, properties);
       console.log("Added to cart:", cartData);
       alert("Product added to cart successfully!");
@@ -78,7 +83,7 @@ const Controls = () => {
         <h3>1. Pergola Type</h3>
         <div className="btn-group">
           {['free-standing', 'wall-mounted'].map(t => (
-            <button 
+            <button
               key={t}
               className={`opt-btn ${type === t ? 'active' : ''}`}
               onClick={() => setType(t)}
@@ -93,7 +98,7 @@ const Controls = () => {
         <h3>Size</h3>
         <div className="btn-group">
           {['3x3', '3x4', '4x4'].map(s => (
-            <button 
+            <button
               key={s}
               className={`opt-btn ${size === s ? 'active' : ''}`}
               onClick={() => setSize(s)}
@@ -111,7 +116,7 @@ const Controls = () => {
             { id: 'white', name: 'White', hex: '#ffffff' },
             { id: 'anthracite', name: 'Anthracite', hex: '#3a3c3e' }
           ].map(c => (
-            <button 
+            <button
               key={c.id}
               className={`opt-btn color-btn ${color === c.id ? 'active' : ''}`}
               onClick={() => setColor(c.id)}
@@ -127,7 +132,7 @@ const Controls = () => {
         <h3>Side Blinds</h3>
         <div className="btn-group blinds-group">
           {['A', 'B', 'C', 'D'].map(side => (
-            <button 
+            <button
               key={side}
               className={`opt-btn ${blinds[side] ? 'active' : ''}`}
               onClick={() => toggleBlind(side)}
