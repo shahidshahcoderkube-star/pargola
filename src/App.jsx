@@ -8,24 +8,32 @@ import './App.css';
 
 function App() {
   const { setProductData, isLoading } = useConfigStore();
-  const [error, setError] = React.useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const initProduct = async () => {
-      try {
-        const product = await fetchProductByHandle('customize-pergola');
-        if (product) {
-          setProductData(product);
-        } else {
-          setError("Product 'customize-pergola' not found in Shopify.");
-        }
-      } catch (err) {
-        console.error("Failed to fetch dynamic product data:", err);
-        setError("Unable to connect to Shopify. Please check your Storefront Access Token and Domain in the .env file.");
+    // Listen for product data from the Shopify parent page (Liquid)
+    const handleShopifyMessage = (event) => {
+      // SECURITY: In production, you should check event.origin to ensure it's your Shopify store
+      if (event.data && event.data.type === 'SHOPIFY_PRODUCT_DATA') {
+        console.log("Received product data from Shopify:", event.data.product);
+        setProductData(event.data.product);
       }
     };
-    initProduct();
-  }, [setProductData]);
+
+    window.addEventListener('message', handleShopifyMessage);
+
+    // Timeout to show error if no data is received within 5 seconds
+    const timeout = setTimeout(() => {
+      if (isLoading && !error) {
+        // setError("Timed out waiting for product data from Shopify. Make sure the Liquid script is added to your theme.");
+      }
+    }, 5000);
+
+    return () => {
+      window.removeEventListener('message', handleShopifyMessage);
+      clearTimeout(timeout);
+    };
+  }, [setProductData, isLoading, error]);
 
   if (error) {
     return (
