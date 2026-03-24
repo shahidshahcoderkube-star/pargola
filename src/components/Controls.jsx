@@ -1,6 +1,6 @@
 import { useConfigStore } from '../store/useConfigStore';
 import { getVariantId, VARIANT_MAPPINGS } from '../utils/pricing';
-import { addToCart } from '../utils/shopify';
+import { addToCart, redirectToCart, SHOPIFY_DOMAIN } from '../utils/shopify';
 
 const Controls = () => {
   const { type, size, color, blinds, setType, setSize, setColor, toggleBlind, resetConfig, triggerCameraReset, totalPrice } = useConfigStore();
@@ -29,7 +29,7 @@ const Controls = () => {
     };
     
     try {
-      const cartData = await addToCart(variantId, 1, {
+      const properties = {
         "Base Price": `£${VARIANT_MAPPINGS[type][size].price}`,
         "Total Configured Price": `£${totalPrice.toLocaleString()}`,
         Type: type,
@@ -39,8 +39,15 @@ const Controls = () => {
         "Blind B": blinds.B ? "Yes" : "No",
         "Blind C": blinds.C ? "Yes" : "No",
         "Blind D": blinds.D ? "Yes" : "No",
-      });
+      };
 
+      // If running on Vercel/External, we must redirect to the Shopify store
+      if (window.location.hostname !== SHOPIFY_DOMAIN) {
+        redirectToCart(variantId, 1, properties);
+        return;
+      }
+
+      const cartData = await addToCart(variantId, 1, properties);
       console.log("Added to cart:", cartData);
       alert("Product added to cart successfully!");
     } catch (err) {
