@@ -1,11 +1,11 @@
-import React from 'react';
 import { useConfigStore } from '../store/useConfigStore';
-import { getVariantId } from '../utils/pricing';
+import { getVariantId, VARIANT_MAPPINGS } from '../utils/pricing';
+import { addToCart } from '../utils/shopify';
 
 const Controls = () => {
   const { type, size, color, blinds, setType, setSize, setColor, toggleBlind, resetConfig, triggerCameraReset, totalPrice } = useConfigStore();
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     const variantId = getVariantId(type, size);
     
     if (!variantId) {
@@ -24,13 +24,31 @@ const Controls = () => {
         "Blind B": blinds.B ? "Yes" : "No",
         "Blind C": blinds.C ? "Yes" : "No",
         "Blind D": blinds.D ? "Yes" : "No",
+        "_config_id": `pergola_${Date.now()}` // Internal reference
       }
     };
     
-    console.log("Adding to cart:", payload);
-    alert("Check console for Cart Payload");
-    // TODO: implement Shopify AJAX API `/cart/add.js` call here
+    try {
+      const cartData = await addToCart(variantId, 1, {
+        "Base Price": `£${VARIANT_MAPPINGS[type][size].price}`,
+        "Total Configured Price": `£${totalPrice.toLocaleString()}`,
+        Type: type,
+        Size: size,
+        Color: color,
+        "Blind A": blinds.A ? "Yes" : "No",
+        "Blind B": blinds.B ? "Yes" : "No",
+        "Blind C": blinds.C ? "Yes" : "No",
+        "Blind D": blinds.D ? "Yes" : "No",
+      });
+
+      console.log("Added to cart:", cartData);
+      alert("Product added to cart successfully!");
+    } catch (err) {
+      console.error("Error adding to cart:", err);
+      alert(`Error: ${err.message || 'Failed to add to cart'}`);
+    }
   };
+
 
   const handleFullscreen = () => {
     if (!document.fullscreenElement) {
