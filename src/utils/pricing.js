@@ -1,32 +1,27 @@
 /**
- * This is where we map the configurator choices to real Shopify Variant IDs.
- * In a production Shopify environment, this data can be passed from Liquid 
- * into the React app as a JSON object.
+ * This file handles the pricing logic.
+ * It now relies entirely on dynamic data fetched from the Shopify Storefront API.
  */
 
-export const VARIANT_MAPPINGS = {
-  'free-standing': {
-    '3x3': { id: '445566778899', price: 1200 },
-    '3x4': { id: '445566779900', price: 1500 },
-    '4x4': { id: '445566770011', price: 1800 }
-  },
-  'wall-mounted': {
-    '3x3': { id: '556677889900', price: 1000 },
-    '3x4': { id: '556677880011', price: 1300 },
-    '4x4': { id: '556677881122', price: 1600 }
-  }
-};
-
-// Pricing for extra features
+// Pricing for extra features (these stay for now as they are not in the Shopify Variants)
 export const FEATURES_PRICING = {
   blind: 150 // Cost per side blind
 };
 
 /**
- * Utility to calculate total price based on state
+ * Utility to calculate total price based on state. 
+ * Relies on dynamicVariants from Storefront API.
  */
-export const calculatePrice = (type, size, blinds) => {
-  const basePrice = VARIANT_MAPPINGS[type]?.[size]?.price || 0;
+export const calculatePrice = (type, size, blinds, dynamicVariants = []) => {
+  let basePrice = 0;
+
+  if (dynamicVariants && dynamicVariants.length > 0) {
+    // Search for a variant that matches the size (e.g., '3X3')
+    const match = dynamicVariants.find(v => v.title.toLowerCase() === size.toLowerCase());
+    if (match) {
+      basePrice = parseFloat(match.price.amount);
+    }
+  }
   
   // Count how many blinds are toggled
   const blindCount = Object.values(blinds).filter(Boolean).length;
@@ -36,8 +31,12 @@ export const calculatePrice = (type, size, blinds) => {
 };
 
 /**
- * Utility to get Variant ID
+ * Utility to get Variant ID from dynamicVariants.
  */
-export const getVariantId = (type, size) => {
-  return VARIANT_MAPPINGS[type]?.[size]?.id || null;
+export const getVariantId = (type, size, dynamicVariants = []) => {
+  if (dynamicVariants && dynamicVariants.length > 0) {
+    const match = dynamicVariants.find(v => v.title.toLowerCase() === size.toLowerCase());
+    return match ? match.id : null;
+  }
+  return null;
 };

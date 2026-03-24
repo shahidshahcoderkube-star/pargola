@@ -7,10 +7,11 @@ import * as THREE from 'three';
 const ProceduralPergola = () => {
   const { type, size, color, blinds } = useConfigStore();
   
-  // Parse dimensions (e.g., '3x4' -> w:3, d:4)
-  const w = parseInt(size.charAt(0));
-  const d = parseInt(size.charAt(2));
-  const h = 2.5; // Height is constant 2.5m
+  // Robustly parse dimensions (e.g., '3x4', '10X12', '3X3')
+  const parts = size.toLowerCase().split('x');
+  const w = parseFloat(parts[0]) || 3;
+  const d = parseFloat(parts[1]) || 3;
+  const h = 2.5; // Height remains constant
 
   const t = 0.15; // Thickness of legs and beams
   const materialColor = color === 'white' ? '#f0f0f0' : '#2c2e30';

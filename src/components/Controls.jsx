@@ -1,12 +1,13 @@
 import { useConfigStore } from '../store/useConfigStore';
-import { getVariantId, VARIANT_MAPPINGS } from '../utils/pricing';
+import { getVariantId } from '../utils/pricing';
 import { addToCart, redirectToCart, SHOPIFY_DOMAIN } from '../utils/shopify';
 
 const Controls = () => {
-  const { type, size, color, blinds, setType, setSize, setColor, toggleBlind, resetConfig, triggerCameraReset, totalPrice } = useConfigStore();
+  const { type, size, color, blinds, setType, setSize, setColor, toggleBlind, resetConfig, triggerCameraReset, totalPrice, variants } = useConfigStore();
 
   const handleAddToCart = async () => {
-    const variantId = getVariantId(type, size);
+    // Pass dynamic variants to get the real-time ID
+    const variantId = getVariantId(type, size, variants);
 
     if (!variantId) {
       alert("Error: Variant not found for this configuration.");
@@ -27,10 +28,12 @@ const Controls = () => {
         "_config_id": `pergola_${Date.now()}` // Internal reference
       }
     };
-
     try {
+      const match = variants.find(v => v.title.toLowerCase() === size.toLowerCase());
+      const basePriceBase = match ? parseFloat(match.price.amount) : 0;
+
       const properties = {
-        "Base Price": `£${VARIANT_MAPPINGS[type][size].price}`,
+        "Base Price": `£${basePriceBase}`,
         "Total Configured Price": `£${totalPrice.toLocaleString()}`,
         Type: type,
         Size: size,
@@ -97,15 +100,28 @@ const Controls = () => {
       <div className="control-section">
         <h3>Size</h3>
         <div className="btn-group">
-          {['3x3', '3x4', '4x4'].map(s => (
-            <button
-              key={s}
-              className={`opt-btn ${size === s ? 'active' : ''}`}
-              onClick={() => setSize(s)}
-            >
-              {s}
-            </button>
-          ))}
+          {/* Dynamic sizing based on Shopify variants */}
+          {variants.length > 0 ? (
+            variants.map(v => (
+              <button
+                key={v.id}
+                className={`opt-btn ${size.toLowerCase() === v.title.toLowerCase() ? 'active' : ''}`}
+                onClick={() => setSize(v.title.toLowerCase())}
+              >
+                {v.title}
+              </button>
+            ))
+          ) : (
+            ['3x3', '4x4', '5x5'].map(s => (
+              <button
+                key={s}
+                className={`opt-btn ${size === s ? 'active' : ''}`}
+                onClick={() => setSize(s)}
+              >
+                {s}
+              </button>
+            ))
+          )}
         </div>
       </div>
 
