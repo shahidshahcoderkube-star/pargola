@@ -46,6 +46,7 @@ export const addToCart = async (variantId, quantity = 1, properties = {}) => {
 /**
  * Generates a Shopify Permalink URL to add items from Vercel/External domains.
  * This is the fix for the 404 error on Vercel.
+ * It uses window.top to ensure it breaks out of iframes on Shopify.
  */
 export const redirectToCart = (variantId, quantity = 1, properties = {}) => {
   const baseUrl = `https://${SHOPIFY_DOMAIN}/cart/${variantId}:${quantity}`;
@@ -53,11 +54,18 @@ export const redirectToCart = (variantId, quantity = 1, properties = {}) => {
   // Convert properties to URL parameters
   const params = new URLSearchParams();
   Object.entries(properties).forEach(([key, value]) => {
+    // Note: permalinks use attributes[] or specific app-compatible params
     params.append(`attributes[${key}]`, value);
   });
 
   const finalUrl = `${baseUrl}?${params.toString()}`;
-  window.location.href = finalUrl;
+  
+  // Break out of the iframe
+  if (window.top !== window.self) {
+    window.top.location.href = finalUrl;
+  } else {
+    window.location.href = finalUrl;
+  }
 };
 
 /**
