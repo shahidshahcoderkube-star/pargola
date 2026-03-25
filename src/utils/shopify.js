@@ -8,6 +8,58 @@ export const getShopifyDomain = () => {
 };
 
 export const SHOPIFY_DOMAIN = getShopifyDomain();
+export const STOREFRONT_ACCESS_TOKEN = import.meta.env.VITE_SHOPIFY_STOREFRONT_ACCESS_TOKEN;
+
+/**
+ * Fetch Product data (variants, prices, options) from Shopify Storefront API.
+ */
+export const fetchProductByHandle = async (handle) => {
+  const query = `
+    query getProduct($handle: String!) {
+      product(handle: $handle) {
+        id
+        title
+        variants(first: 20) {
+          edges {
+            node {
+              id
+              title
+              price {
+                amount
+                currencyCode
+              }
+              selectedOptions {
+                name
+                value
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  const response = await fetch(`https://${SHOPIFY_DOMAIN}/api/2024-01/graphql.json`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Storefront-Access-Token': STOREFRONT_ACCESS_TOKEN
+    },
+    body: JSON.stringify({ query, variables: { handle } })
+  });
+
+  if (!response.ok) {
+    throw new Error('Storefront API request failed');
+  }
+
+  const result = await response.json();
+  if (result.errors) {
+    console.error('GraphQL Errors:', result.errors);
+    throw new Error(result.errors[0].message);
+  }
+
+  return result.data.product;
+};
 /**
  * Add an item to the Shopify cart with line item properties.
  * 
